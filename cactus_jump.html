@@ -1,0 +1,2618 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Кактус Джамп PRO</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            touch-action: manipulation;
+            position: fixed;
+            width: 100%;
+        }
+
+        #mobile-check {
+            display: none;
+        }
+
+        #desktop-message {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #16213e;
+            color: white;
+            z-index: 1000;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+        }
+
+        #desktop-message h1 {
+            color: #01ff4d;
+            margin-bottom: 20px;
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        #orientation-message {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #16213e;
+            color: white;
+            z-index: 1001;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+        }
+
+        #orientation-message h1 {
+            color: #00ff0d;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            max-width: 500px;
+            max-height: 800px;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.7);
+            background: rgba(15, 15, 30, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        #game-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* ====== НОВЫЙ СТИЛЬ HUD (центрированный) ====== */
+        .hud-container {
+            position: absolute;
+            top: 20px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 10;
+            pointer-events: none;
+            gap: 10px;
+        }
+
+        /* Центрированная плашка очков (только кубок и цифры) */
+        #score-display-main {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            font-size: 32px;
+            font-weight: 800;
+            color: #FFD700;
+            text-shadow:
+                0 0 20px rgba(255, 215, 0, 0.7),
+                0 0 40px rgba(255, 215, 0, 0.4),
+                0 4px 12px rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 10px 25px;
+            border: 2px solid rgba(255, 215, 0, 0.3);
+            box-shadow:
+                0 8px 32px rgba(0, 0, 0, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+            pointer-events: auto;
+            transition: all 0.3s ease;
+            min-width: 160px;
+            text-align: center;
+        }
+
+        #score-display-main:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow:
+                0 12px 40px rgba(0, 0, 0, 0.6),
+                0 0 60px rgba(255, 215, 0, 0.3);
+            border-color: rgba(255, 215, 0, 0.6);
+        }
+
+        #score-display-main:active {
+            transform: scale(0.95);
+            transition-duration: 0.1s;
+        }
+
+        /* Иконка кубка в центре очков */
+        .score-cup {
+            font-size: 32px;
+            filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.8));
+            animation: cupGlow 2s infinite alternate;
+        }
+
+        @keyframes cupGlow {
+            0% {
+                filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.5));
+                transform: scale(1);
+            }
+
+            100% {
+                filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.9));
+                transform: scale(1.1);
+            }
+        }
+
+        /* Плашка мира (маленькая, в левом верхнем углу) */
+        #world-display-small {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(64, 156, 255, 0.15);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-radius: 15px;
+            padding: 16px 24px; /* Изменено с 8px 16px для одинаковой высоты */
+            font-size: 14px;
+            font-weight: 700;
+            color: #64B5FF;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(64, 156, 255, 0.3);
+            box-shadow:
+                0 6px 20px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            pointer-events: none;
+            z-index: 11;
+            display: flex;
+            align-items: center;
+            justify-content: center; /* Добавлено для центрирования */
+            gap: 8px;
+            min-width: 120px;
+            height: 55px; /* Добавлено для одинаковой высоты с кнопкой */
+        }
+
+        /* Кнопка паузы (правая верхняя) */
+        #pause-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 55px;
+            height: 55px;
+            background: rgba(7, 136, 35, 0.15);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            pointer-events: auto;
+            border: 1px solid rgba(7, 136, 35, 0.15);
+            box-shadow:
+                0 6px 20px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            z-index: 11;
+        }
+
+        #pause-button:hover {
+            transform: translateY(-3px);
+            background: rgba(255, 68, 68, 0.25);
+            box-shadow:
+                0 10px 30px rgba(0, 0, 0, 0.4),
+                0 0 30px rgba(255, 68, 68, 0.2);
+        }
+
+        #pause-button.active {
+            background: rgba(72, 255, 0, 0.15);
+            border-color: rgba(72, 255, 0, 0.3);
+        }
+
+        #pause-button.active:hover {
+            background: rgba(72, 255, 0, 0.25);
+            box-shadow:
+                0 10px 30px rgba(0, 0, 0, 0.4),
+                0 0 30px rgba(72, 255, 0, 0.2);
+        }
+
+        #pause-button .play-icon,
+        #pause-button .pause-icon {
+            width: 22px;
+            height: 22px;
+            position: relative;
+            z-index: 2;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+        }
+
+        #pause-button .pause-icon rect {
+            fill: #FF6B6B;
+        }
+
+        #pause-button.active .pause-icon rect {
+            fill: #4CAF50;
+        }
+
+        #pause-button .play-icon polygon {
+            fill: #4CAF50;
+        }
+
+        /* Индикатор комбо (рядом с очками) */
+        .combo-indicator {
+            background: linear-gradient(135deg,
+                    rgba(255, 165, 0, 0.25) 0%,
+                    rgba(255, 140, 0, 0.2) 100%);
+            backdrop-filter: blur(10px);
+            color: #ffaa55;
+            padding: 6px 14px;
+            border-radius: 12px;
+            margin-left: 10px;
+            font-size: 14px;
+            font-weight: 800;
+            border: 1px solid rgba(255, 165, 0, 0.4);
+            position: relative;
+            overflow: hidden;
+            min-width: 70px;
+            text-align: center;
+            height: 34px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow:
+                0 4px 16px rgba(255, 140, 0, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+
+        .combo-indicator span {
+            background: linear-gradient(180deg, #FFD700 0%, #FFA500 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 800;
+            text-shadow: 0 2px 8px rgba(255, 165, 0, 0.3);
+        }
+
+        /* Адаптивность для мобильных */
+        @media (max-width: 450px) {
+            #score-display-main {
+                font-size: 26px;
+                padding: 8px 20px;
+                min-width: 140px;
+                border-radius: 18px;
+            }
+
+            .score-cup {
+                font-size: 26px;
+            }
+
+            #world-display-small {
+                top: 15px;
+                left: 15px;
+                padding: 6px 12px;
+                font-size: 12px;
+                min-width: 100px;
+            }
+
+            #pause-button {
+                top: 15px;
+                right: 15px;
+                width: 50px;
+                height: 50px;
+            }
+
+            .combo-indicator {
+                font-size: 12px;
+                padding: 5px 10px;
+                min-width: 60px;
+                height: 30px;
+            }
+        }
+
+        @media (max-width: 380px) {
+            #score-display-main {
+                font-size: 22px;
+                padding: 6px 16px;
+                min-width: 120px;
+            }
+
+            .score-cup {
+                font-size: 22px;
+            }
+
+            #world-display-small {
+                top: 12px;
+                left: 12px;
+                padding: 5px 10px;
+                font-size: 11px;
+                min-width: 90px;
+            }
+
+            #pause-button {
+                top: 12px;
+                right: 12px;
+                width: 46px;
+                height: 46px;
+            }
+
+            .combo-indicator {
+                font-size: 11px;
+                padding: 4px 8px;
+                min-width: 50px;
+                height: 26px;
+            }
+        }
+
+        /* Стили для таблицы рекордов */
+        .record-item {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%);
+            border-left: 4px solid;
+            padding: 14px 18px;
+            margin: 8px 0;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .record-item:nth-child(1) {
+            border-left-color: #FFD700;
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 215, 0, 0.05) 100%);
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.2);
+        }
+
+        .record-item:nth-child(2) {
+            border-left-color: #C0C0C0;
+            background: linear-gradient(135deg, rgba(192, 192, 192, 0.15) 0%, rgba(192, 192, 192, 0.05) 100%);
+        }
+
+        .record-item:nth-child(3) {
+            border-left-color: #CD7F32;
+            background: linear-gradient(135deg, rgba(205, 127, 50, 0.15) 0%, rgba(205, 127, 50, 0.05) 100%);
+        }
+
+        #start-screen,
+        #game-over-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.95) 0%, rgba(22, 33, 62, 0.95) 100%);
+            color: white;
+            z-index: 20;
+            text-align: center;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+        }
+
+        #game-over-screen {
+            display: none;
+        }
+
+        h1 {
+            font-size: 32px;
+            margin-bottom: 20px;
+            color: #00ff22;
+            text-shadow: 0 2px 10px rgba(0, 255, 0, 0.5);
+            font-weight: 800;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            background: linear-gradient(45deg, #00d4ff, #0099ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        button {
+            padding: 16px 40px;
+            font-size: 18px;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #start-button {
+            background: linear-gradient(135deg, #00ff2a 0%, #1eff00 100%);
+        }
+
+        #restart-button {
+            background: linear-gradient(135deg, #ff4757 0%, #ff3838 100%);
+        }
+
+        button:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+        }
+
+        .instructions {
+            margin-top: 20px;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.8);
+            max-width: 90%;
+            line-height: 1.6;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Кактус */
+        .cactus-container {
+            position: absolute;
+            transform: scale(0.4);
+            z-index: 5 !important;
+            pointer-events: none;
+            filter: drop-shadow(0 5px 15px rgba(0, 0, 0, 0.5));
+            transition: transform 0.1s ease-out;
+            display: none;
+        }
+
+        .cactus-jump {
+            animation: cactusJump 0.3s ease-out;
+        }
+
+        @keyframes cactusJump {
+            0% {
+                transform: scale(0.4);
+            }
+
+            50% {
+                transform: scale(0.38) translateY(-5px);
+            }
+
+            100% {
+                transform: scale(0.4);
+            }
+        }
+
+        .cactus-land {
+            animation: cactusLand 0.2s ease-out;
+        }
+
+        @keyframes cactusLand {
+            0% {
+                transform: scale(0.4);
+            }
+
+            70% {
+                transform: scale(0.42) translateY(3px);
+            }
+
+            100% {
+                transform: scale(0.4);
+            }
+        }
+
+        .cactus {
+            position: relative;
+            width: 160px;
+            height: 250px;
+        }
+
+        .cactus-body {
+            position: absolute;
+            width: 120px;
+            height: 200px;
+            background: linear-gradient(45deg, #2d5a27 0%, #4a7c45 30%, #5d9358 70%, #4a7c45 100%);
+            border-radius: 45px 45px 40px 40px;
+            left: 20px;
+            top: 20px;
+            box-shadow: inset -8px -8px 12px rgba(0, 0, 0, 0.4), inset 6px 6px 12px rgba(255, 255, 255, 0.3), 0 0 20px rgba(77, 175, 67, 0.3);
+            border: 2px solid rgba(45, 90, 39, 0.8);
+        }
+
+        .cactus-ribs {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: inherit;
+            background: repeating-linear-gradient(90deg, transparent, transparent 8px, rgba(45, 90, 39, 0.4) 8px, rgba(45, 90, 39, 0.4) 10px);
+        }
+
+        .cactus-arm {
+            position: absolute;
+            background: linear-gradient(45deg, #2d5a27 0%, #4a7c45 30%, #5d9358 70%, #4a7c45 100%);
+            border-radius: 25px;
+            box-shadow: inset -5px -5px 8px rgba(0, 0, 0, 0.3), inset 4px 4px 8px rgba(255, 255, 255, 0.2), 0 0 10px rgba(77, 175, 67, 0.2);
+            border: 1px solid rgba(45, 90, 39, 0.6);
+            z-index: -1;
+        }
+
+        .arm-left {
+            width: 85px;
+            height: 55px;
+            top: 70px;
+            left: -15px;
+            transform: rotate(-25deg);
+            border-radius: 25px 25px 10px 25px;
+        }
+
+        .arm-right {
+            width: 75px;
+            height: 50px;
+            top: 90px;
+            right: -10px;
+            transform: rotate(20deg);
+            border-radius: 25px 25px 25px 10px;
+        }
+
+        .arm-left::before,
+        .arm-right::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: inherit;
+            background: repeating-linear-gradient(90deg, transparent, transparent 6px, rgba(45, 90, 39, 0.3) 6px, rgba(45, 90, 39, 0.3) 8px);
+        }
+
+        .cactus-face {
+            position: absolute;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2;
+        }
+
+        .eyes {
+            display: flex;
+            gap: 24px;
+            margin-bottom: 10px;
+        }
+
+        .eye {
+            width: 18px;
+            height: 18px;
+            background: radial-gradient(circle at 30% 30%, #1a1a1a, #000);
+            border-radius: 50%;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+            transition: all 0.2s ease;
+            animation: blink 4s infinite;
+        }
+
+        .eye.jump {
+            height: 10px;
+            border-radius: 50% 50% 0 0;
+            animation: none;
+        }
+
+        .eye.land {
+            height: 22px;
+            border-radius: 0 0 50% 50%;
+            animation: none;
+        }
+
+        @keyframes blink {
+
+            0%,
+            96%,
+            100% {
+                transform: scaleY(1);
+            }
+
+            98% {
+                transform: scaleY(0.1);
+            }
+        }
+
+        .eye::after {
+            content: '';
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            width: 7px;
+            height: 7px;
+            background: radial-gradient(circle at 30% 30%, #ffffff, #cccccc);
+            border-radius: 50%;
+        }
+
+        .mouth {
+            width: 28px;
+            height: 12px;
+            background: #1a1a1a;
+            border-radius: 0 0 14px 14px;
+            margin: 0 auto;
+            transition: all 0.1s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            animation: smile 6s infinite;
+        }
+
+        .mouth.jump {
+            border-radius: 14px 14px 14px 14px;
+            height: 8px;
+        }
+
+        .mouth.super {
+            border-radius: 14px 14px 0 0;
+            height: 16px;
+        }
+
+        @keyframes smile {
+
+            0%,
+            90%,
+            100% {
+                border-radius: 0 0 14px 14px;
+                height: 12px;
+            }
+
+            95% {
+                border-radius: 14px 14px 14px 14px;
+                height: 8px;
+            }
+        }
+
+        .screen-shake {
+            animation: screenShake 0.3s ease-out;
+        }
+
+        @keyframes screenShake {
+            0% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-5px);
+            }
+
+            50% {
+                transform: translateX(5px);
+            }
+
+            75% {
+                transform: translateX(-3px);
+            }
+
+            100% {
+                transform: translateX(0);
+            }
+        }
+
+        /* Сенсорное управление */
+        .touch-controls {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 5;
+        }
+
+        .touch-control {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow:
+                0 8px 32px rgba(0, 0, 0, 0.3),
+                0 0 0 1px rgba(255, 255, 255, 0.1);
+        }
+
+        .watermark {
+            position: fixed;
+            bottom: 8px;
+            right: 30px;
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 12px;
+            z-index: 1000;
+            pointer-events: none;
+        }
+
+        /* ИНДИКАТОР ПАУЗЫ */
+        #pause-indicator {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 25;
+            pointer-events: auto;
+        }
+
+        .pause-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            width: 80%;
+            max-width: 300px;
+        }
+
+        .pause-icon-large {
+            font-size: 80px;
+            margin-bottom: 20px;
+            display: block;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: 0 4px 20px rgba(0, 212, 255, 0.5);
+        }
+
+        .pause-title {
+            color: white;
+            font-size: 32px;
+            font-weight: 800;
+            margin-bottom: 15px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+            background: linear-gradient(45deg, #00cc66, #00994d);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .pause-hint {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 16px;
+            margin-top: 20px;
+            line-height: 1.4;
+        }
+
+        /* КНОПКА ДЛЯ РАЗРЕШЕНИЯ НАКЛОНА */
+        #tilt-permission-panel {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            z-index: 30;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .tilt-content {
+            background: rgba(30, 30, 60, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 30px;
+            width: 90%;
+            max-width: 350px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .tilt-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+            color: #3cff00;
+        }
+
+        .tilt-title {
+            color: white;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+
+        .tilt-description {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 16px;
+            line-height: 1.5;
+            margin-bottom: 25px;
+        }
+
+        .tilt-button {
+            padding: 16px 30px;
+            font-size: 18px;
+            background: linear-gradient(135deg, #00ff00 0%, #1eff00 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 700;
+            width: 100%;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 20px rgba(0, 212, 255, 0.3);
+        }
+
+        .tilt-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(0, 212, 255, 0.4);
+        }
+
+        .tilt-skip {
+            margin-top: 15px;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 14px;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        /* Стили для попапа имени и рекордов */
+        #name-popup,
+        #records-screen {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 1002;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+
+        #player-name-input {
+            padding: 15px;
+            font-size: 18px;
+            border-radius: 12px;
+            border: 2px solid #4CAF50;
+            background: rgba(30, 30, 40, 0.8);
+            color: white;
+            width: 80%;
+            max-width: 300px;
+            text-align: center;
+            margin: 20px 0;
+            backdrop-filter: blur(10px);
+        }
+
+        #player-name-input:focus {
+            outline: none;
+            border-color: #FFD700;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+        }
+
+        #name-error {
+            color: #FF5722;
+            margin: 10px 0;
+            font-size: 14px;
+            min-height: 20px;
+        }
+
+        #records-list {
+            width: 90%;
+            max-width: 400px;
+            max-height: 400px;
+            overflow-y: auto;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        #records-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        #records-list::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+
+        #records-list::-webkit-scrollbar-thumb {
+            background: #4CAF50;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="mobile-check"></div>
+
+    <div id="desktop-message">
+        <h1>🌵 Кактус Джамп</h1>
+        <p>Эта игра доступна только на мобильных устройствах</p>
+        <p>Пожалуйста, откройте игру на своем смартфоне</p>
+    </div>
+
+    <div id="orientation-message">
+        <h1>📱 Поверните телефон</h1>
+        <p>Для игры в "Кактус Джамп"</p>
+        <p>пожалуйста, переверните телефон вертикально</p>
+    </div>
+
+    <!-- Панель разрешения наклона -->
+    <div id="tilt-permission-panel">
+        <div class="tilt-content">
+            <div class="tilt-icon">📱</div>
+            <div class="tilt-title">Управление наклоном</div>
+            <div class="tilt-description">
+                Для управления кактусом наклоном телефона<br>
+                необходимо разрешить доступ к датчикам устройства
+            </div>
+            <button class="tilt-button" id="enable-tilt-btn">РАЗРЕШИТЬ НАКЛОН</button>
+            <div class="tilt-skip" id="skip-tilt-btn">Использовать кнопки управления</div>
+        </div>
+    </div>
+
+    <div id="name-popup">
+        <h2 style="color: #4CAF50; margin-bottom: 20px;">🎉 НОВЫЙ РЕКОРД! 🎉</h2>
+        <p style="color: #FFD700; margin-bottom: 10px;">Вы попали в таблицу рекордов!</p>
+        <p style="color: #ccc; margin-bottom: 20px;">Введите ваше имя:</p>
+        <input type="text" id="player-name-input" maxlength="15" placeholder="Введите имя">
+        <p id="name-error"></p>
+        <button id="save-name-btn" style="background: linear-gradient(45deg, #4CAF50, #45a049);">СОХРАНИТЬ</button>
+    </div>
+
+    <div id="records-screen">
+        <h1 style="color: #FFD700; margin-bottom: 20px;">🏆 ТОП-10 ИГРОКОВ 🏆</h1>
+        <div id="records-list"></div>
+        <button id="back-from-records" style="background: linear-gradient(45deg, #2196F3, #1976D2);">НАЗАД</button>
+    </div>
+
+    <div id="game-container">
+        <canvas id="game-canvas"></canvas>
+
+        <!-- НОВЫЙ HUD -->
+        <!-- Маленькая плашка мира (левый верхний угол) -->
+        <div id="world-display-small">🌵 Пустыня</div>
+
+        <!-- Центрированный HUD -->
+        <div class="hud-container">
+            <!-- Основные очки (кликабельные) -->
+            <div id="score-display-main">
+                <span class="score-cup">🏆</span>
+                <span id="score-text">0</span>
+            </div>
+        </div>
+
+        <!-- Кнопка паузы (правый верхний угол - теперь видна) -->
+        <div id="pause-button">
+            <svg class="pause-icon" viewBox="0 0 24 24">
+                <rect x="6" y="4" width="4" height="16" />
+                <rect x="14" y="4" width="4" height="16" />
+            </svg>
+            <svg class="play-icon" style="display: none;" viewBox="0 0 24 24">
+                <polygon points="5,3 19,12 5,21" />
+            </svg>
+        </div>
+
+        <!-- ИНДИКАТОР ПАУЗЫ -->
+        <div id="pause-indicator">
+            <div class="pause-content">
+                <div class="pause-icon-large">⏸</div>
+                <div class="pause-title">ПАУЗА</div>
+                <div class="pause-hint">Нажмите зелёную кнопку<br>в правом верхнем углу<br>для продолжения игры</div>
+            </div>
+        </div>
+
+        <div id="start-screen">
+            <h1>🌵 Кактус Джамп</h1>
+            <div class="instructions">
+                МОЩНЫЕ ПРЫЖКИ! Выше неба!<br>
+                Цепляй комбо за скорость!<br>
+                Наклоняй телефон для экстремального контроля!
+            </div>
+            <button id="start-button">СТАРТ!</button>
+        </div>
+
+        <div id="game-over-screen">
+            <h1>💀 КОНЕЦ ИГРЫ!</h1>
+            <p id="final-score" style="font-size: 20px; margin: 10px 0; color: #FFD700;">🏆 Очки: 0</p>
+            <p id="height-record" style="font-size: 16px; margin: 5px 0; color: #4CAF50;">📏 Высота: 0m</p>
+            <p id="combo-record" style="font-size: 16px; margin: 5px 0; color: #FF5722;">⚡ Макс. комбо: 0</p>
+            <button id="restart-button">СРАЗУ ЕЩЁ РАЗ!</button>
+        </div>
+
+        <div class="touch-controls">
+            <div class="touch-control" id="left-control">←</div>
+            <div class="touch-control" id="right-control">→</div>
+        </div>
+    </div>
+
+    <div class="watermark">© Shushan</div>
+
+    <script>
+        // ========== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ==========
+        let gameActive = false;
+        let gamePaused = false;
+        let score = 0;
+        let maxHeight = 0;
+        let currentWorld = 1;
+        let cameraY = 0;
+        let moveDirection = 0;
+        let cactusElement = null;
+        let lastPlatformY = 0;
+        let lastScoreHeight = 0;
+        let tiltControlEnabled = false;
+        let playerId = null;
+        let playerName = "Игрок";
+        let gameSessionId = null;
+        let backgroundImages = {};
+        let imagesLoaded = false;
+        let tiltPermissionGranted = false;
+        let tiltPermissionRequested = false;
+        let tiltControlActive = false;
+
+        // Комбо система
+        let combo = 0;
+        let maxCombo = 0;
+        let consecutiveJumps = 0;
+        let speedMultiplier = 1.0;
+        let lastJumpTime = 0;
+        let jumpStreak = 0;
+        let isInAir = false;
+        let timeSinceLastPlatform = 0;
+
+        // Система рекордов
+        let playerRecords = [];
+        const MAX_RECORDS = 10;
+
+        // Определения миров
+        const worlds = {
+            1: {
+                name: "🌵 Пустыня", bgImage: 'desert', platformColor: '#8B4513',
+                platformCount: 8, platformWidth: 80, monsterChance: 0,
+                moveSpeed: 8, crackingChance: 0.1, gravity: 0.18
+            },
+            2: {
+                name: "🌴 Джунгли", bgImage: 'jungle', platformColor: '#2E8B57',
+                platformCount: 7, platformWidth: 70, monsterChance: 0.1,
+                moveSpeed: 9, crackingChance: 0.2, gravity: 0.16
+            },
+            3: {
+                name: "⛰️ Горы", bgImage: 'mountains', platformColor: '#696969',
+                platformCount: 6, platformWidth: 60, monsterChance: 0.2,
+                moveSpeed: 10, crackingChance: 0.3, gravity: 0.14
+            },
+            4: {
+                name: "☁️ Облака", bgImage: 'clouds', platformColor: '#F0F8FF',
+                platformCount: 5, platformWidth: 50, monsterChance: 0.3,
+                moveSpeed: 11, crackingChance: 0.4, gravity: 0.12
+            }
+        };
+
+        // Переменные для кактуса
+        const cactus = {
+            x: 0,
+            y: 0,
+            width: 55,
+            height: 77,
+            hitboxOffsetX: -27.5,
+            hitboxOffsetY: -19.25,
+            velocityY: 0,
+            jumpPower: 8.5,
+            gravity: 0.2,
+            isJumping: false,
+            jumpBoost: 1.0,
+            baseJumpPower: 8.5,
+            horizontalSpeed: 1.0
+        };
+
+        // Игровые объекты
+        let platforms = [];
+        let boosts = [];
+        let monsters = [];
+        let particles = [];
+
+        // DOM элементы
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        const scoreText = document.getElementById('score-text');
+        const worldDisplay = document.getElementById('world-display-small');
+        const pauseButton = document.getElementById('pause-button');
+        const startScreen = document.getElementById('start-screen');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const startButton = document.getElementById('start-button');
+        const restartButton = document.getElementById('restart-button');
+        const backFromRecords = document.getElementById('back-from-records');
+        const namePopup = document.getElementById('name-popup');
+        const playerNameInput = document.getElementById('player-name-input');
+        const nameError = document.getElementById('name-error');
+        const saveNameBtn = document.getElementById('save-name-btn');
+        const recordsScreen = document.getElementById('records-screen');
+        const recordsList = document.getElementById('records-list');
+        const finalScore = document.getElementById('final-score');
+        const heightRecord = document.getElementById('height-record');
+        const comboRecord = document.getElementById('combo-record');
+        const leftControl = document.getElementById('left-control');
+        const rightControl = document.getElementById('right-control');
+        const pauseIndicator = document.getElementById('pause-indicator');
+        const tiltPermissionPanel = document.getElementById('tilt-permission-panel');
+        const enableTiltBtn = document.getElementById('enable-tilt-btn');
+        const skipTiltBtn = document.getElementById('skip-tilt-btn');
+        const scoreDisplayMain = document.getElementById('score-display-main');
+
+        // ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==========
+
+        function isMobileDevice() {
+            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+
+            const mobileRegex = /Android|iPhone|iPad|iPod|Mobile/i;
+            const isMobile = mobileRegex.test(userAgent);
+
+            const hasTouch = 'ontouchstart' in window ||
+                navigator.maxTouchPoints > 0 ||
+                navigator.msMaxTouchPoints > 0;
+
+            const hasOrientation = typeof window.orientation !== "undefined";
+
+            return isMobile || hasTouch || hasOrientation;
+        }
+
+        function checkOrientation() {
+            const orientationMessage = document.getElementById('orientation-message');
+            const gameContainer = document.getElementById('game-container');
+
+            if (window.innerHeight < window.innerWidth) {
+                orientationMessage.style.display = 'flex';
+                gameContainer.style.display = 'none';
+            } else {
+                orientationMessage.style.display = 'none';
+                gameContainer.style.display = 'block';
+            }
+        }
+
+        function loadBackgroundImages() {
+            const imageUrls = {
+                'desert': 'https://raw.githubusercontent.com/Pavelacrapivic-cpu/CactusJump/main/background_desert.png',
+                'jungle': 'https://raw.githubusercontent.com/Pavelacrapivic-cpu/CactusJump/main/background_jungle.png',
+                'mountains': 'https://raw.githubusercontent.com/Pavelacrapivic-cpu/CactusJump/main/background_mountains.png',
+                'clouds': 'https://raw.githubusercontent.com/Pavelacrapivic-cpu/CactusJump/main/background_clouds.png'
+            };
+
+            let loadedCount = 0;
+            const totalImages = Object.keys(imageUrls).length;
+
+            Object.keys(imageUrls).forEach(world => {
+                backgroundImages[world] = new Image();
+                backgroundImages[world].onload = function () {
+                    loadedCount++;
+                    if (loadedCount === totalImages) {
+                        imagesLoaded = true;
+                    }
+                };
+                backgroundImages[world].onerror = function () {
+                    loadedCount++;
+                    if (loadedCount === totalImages) {
+                        imagesLoaded = true;
+                    }
+                };
+                backgroundImages[world].src = imageUrls[world];
+            });
+        }
+
+        function generateId() {
+            return 'player_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        }
+
+        // ========== СИСТЕМА РЕКОРДОВ ==========
+
+        function loadRecords() {
+            const saved = localStorage.getItem('cactusJumpRecords');
+            if (saved) {
+                try {
+                    playerRecords = JSON.parse(saved);
+                    playerRecords.sort((a, b) => b.score - a.score);
+                } catch (e) {
+                    playerRecords = [];
+                }
+            }
+        }
+
+        function saveRecords() {
+            try {
+                localStorage.setItem('cactusJumpRecords', JSON.stringify(playerRecords));
+            } catch (e) { }
+        }
+
+        function addRecord(name, score, height, combo) {
+            const newRecord = {
+                name: name.trim(),
+                score: score,
+                height: height,
+                combo: combo,
+                date: new Date().toLocaleDateString('ru-RU'),
+                timestamp: Date.now()
+            };
+
+            playerRecords.push(newRecord);
+            playerRecords.sort((a, b) => b.score - a.score);
+
+            if (playerRecords.length > MAX_RECORDS) {
+                playerRecords = playerRecords.slice(0, MAX_RECORDS);
+            }
+
+            saveRecords();
+            return true;
+        }
+
+        function shouldShowRecordPopup(currentScore) {
+            if (playerRecords.length < MAX_RECORDS) {
+                return true;
+            } else {
+                const worstRecord = playerRecords[MAX_RECORDS - 1];
+                return currentScore > worstRecord.score;
+            }
+        }
+
+        function showRecords() {
+            recordsList.innerHTML = '';
+
+            if (playerRecords.length === 0) {
+                recordsList.innerHTML = '<p style="color: #ccc; text-align: center; padding: 20px;">Пока нет рекордов. Будь первым!</p>';
+            } else {
+                playerRecords.forEach((record, index) => {
+                    const recordDiv = document.createElement('div');
+                    recordDiv.className = 'record-item';
+
+                    let borderColor, medalEmoji;
+                    if (index === 0) {
+                        borderColor = '#FFD700';
+                        medalEmoji = '🥇';
+                    } else if (index === 1) {
+                        borderColor = '#C0C0C0';
+                        medalEmoji = '🥈';
+                    } else if (index === 2) {
+                        borderColor = '#CD7F32';
+                        medalEmoji = '🥉';
+                    } else {
+                        borderColor = '#4CAF50';
+                        medalEmoji = `${index + 1}.`;
+                    }
+
+                    recordDiv.style.borderLeftColor = borderColor;
+                    if (index < 3) {
+                        recordDiv.style.background = 'rgba(255,215,0,0.1)';
+                    }
+
+                    const leftDiv = document.createElement('div');
+                    leftDiv.innerHTML = `
+                        <div style="font-size: 18px; font-weight: bold; color: white;">
+                            ${medalEmoji} ${record.name}
+                        </div>
+                        <div style="font-size: 12px; color: #ccc;">${record.date}</div>
+                    `;
+
+                    const rightDiv = document.createElement('div');
+                    rightDiv.innerHTML = `
+                        <div style="text-align: right; color: #4CAF50; font-weight: bold; font-size: 18px;">
+                            🏆 ${record.score}
+                        </div>
+                        <div style="font-size: 12px; color: #ccc;">
+                            📏 ${record.height}m ⚡ ${record.combo}
+                        </div>
+                    `;
+
+                    recordDiv.appendChild(leftDiv);
+                    recordDiv.appendChild(rightDiv);
+                    recordsList.appendChild(recordDiv);
+                });
+            }
+
+            recordsScreen.style.display = 'flex';
+        }
+
+        // ========== СИСТЕМА УПРАВЛЕНИЯ НАКЛОНОМ ==========
+
+        function showTiltPermissionPanel() {
+            if (!tiltPermissionRequested && typeof DeviceOrientationEvent !== 'undefined') {
+                tiltPermissionPanel.style.display = 'flex';
+                if (gameActive && !gamePaused) {
+                    togglePause();
+                }
+                tiltPermissionRequested = true;
+            }
+        }
+
+        function enableTiltControl() {
+            if (typeof DeviceOrientationEvent !== 'undefined') {
+                if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+                    DeviceOrientationEvent.requestPermission()
+                        .then(permissionState => {
+                            if (permissionState === 'granted') {
+                                tiltPermissionGranted = true;
+                                tiltControlActive = true;
+                                tiltControlEnabled = true;
+                                window.addEventListener('deviceorientation', handleDeviceOrientation);
+                                tiltPermissionPanel.style.display = 'none';
+                                if (gamePaused) {
+                                    togglePause();
+                                }
+                                showNotification("✅ Управление наклоном включено!");
+                            } else {
+                                tiltControlEnabled = false;
+                                tiltControlActive = false;
+                                tiltPermissionPanel.style.display = 'none';
+                                if (gamePaused) {
+                                    togglePause();
+                                }
+                                showNotification("👆 Используйте кнопки управления");
+                            }
+                        })
+                        .catch(error => {
+                            tiltControlEnabled = false;
+                            tiltControlActive = false;
+                            tiltPermissionPanel.style.display = 'none';
+                            if (gamePaused) {
+                                togglePause();
+                            }
+                        });
+                } else {
+                    // Для Android и других браузеров
+                    tiltPermissionGranted = true;
+                    tiltControlActive = true;
+                    tiltControlEnabled = true;
+                    window.addEventListener('deviceorientation', handleDeviceOrientation);
+                    tiltPermissionPanel.style.display = 'none';
+                    if (gamePaused) {
+                        togglePause();
+                    }
+                    showNotification("✅ Управление наклоном включено!");
+                }
+            }
+        }
+
+        function skipTiltControl() {
+            tiltControlEnabled = false;
+            tiltControlActive = false;
+            tiltPermissionPanel.style.display = 'none';
+            if (gamePaused) {
+                togglePause();
+            }
+        }
+
+        function handleDeviceOrientation(e) {
+            if (!gameActive || gamePaused || !tiltControlEnabled || !tiltControlActive) return;
+
+            const gamma = e.gamma;
+            if (gamma !== null && gamma !== undefined) {
+                let tilt = Math.max(-1, Math.min(1, gamma / 20));
+
+                if (Math.abs(tilt) < 0.15) {
+                    tilt = 0;
+                }
+
+                moveDirection = tilt;
+            }
+        }
+
+        function showNotification(text) {
+            const notification = document.createElement('div');
+            notification.textContent = text;
+            notification.style.cssText = `
+                position: fixed;
+                top: 100px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(0, 0, 0, 0.8);
+                color: white;
+                padding: 12px 24px;
+                border-radius: 10px;
+                z-index: 1000;
+                font-weight: bold;
+                text-align: center;
+                backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+                animation: fadeInOut 2s ease-in-out;
+            `;
+
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes fadeInOut {
+                    0% { opacity: 0; transform: translate(-50%, -20px); }
+                    15% { opacity: 1; transform: translate(-50%, 0); }
+                    85% { opacity: 1; transform: translate(-50%, 0); }
+                    100% { opacity: 0; transform: translate(-50%, -20px); }
+                }
+            `;
+            document.head.appendChild(style);
+
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.remove();
+                style.remove();
+            }, 2000);
+        }
+
+        // ========== ИГРОВАЯ ЛОГИКА ==========
+
+        function createCactusElement() {
+            const cactusContainer = document.createElement('div');
+            cactusContainer.className = 'cactus-container';
+            cactusContainer.id = 'cactus-element';
+            cactusContainer.style.zIndex = '5';
+
+            const cactusHTML = `
+                <div class="cactus">
+                    <div class="cactus-body">
+                        <div class="cactus-ribs"></div>
+                        <div class="cactus-arm arm-left"></div>
+                        <div class="cactus-arm arm-right"></div>
+                    </div>
+                    <div class="cactus-face">
+                        <div class="eyes">
+                            <div class="eye"></div>
+                            <div class="eye"></div>
+                        </div>
+                        <div class="mouth"></div>
+                    </div>
+                </div>
+            `;
+
+            cactusContainer.innerHTML = cactusHTML;
+            document.getElementById('game-container').appendChild(cactusContainer);
+            return cactusContainer;
+        }
+
+        function createJumpParticles(x, y, count, type = 'normal') {
+            for (let i = 0; i < count; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 2 + Math.random() * 4;
+                const size = type === 'boost' ? 8 + Math.random() * 8 : 4 + Math.random() * 8;
+                const life = 0.5 + Math.random() * 0.5;
+
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed - 2,
+                    size: size,
+                    life: life,
+                    maxLife: life,
+                    color: type === 'boost' ?
+                        `hsl(${40 + Math.random() * 20}, 100%, 60%)` :
+                        `hsl(${120 + Math.random() * 30}, 100%, 60%)`,
+                    type: type
+                });
+            }
+        }
+
+        function updateParticles() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.1;
+                p.life -= 0.016;
+
+                if (p.life <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+        }
+
+        function drawParticles() {
+            particles.forEach(p => {
+                const alpha = p.life / p.maxLife;
+                const screenY = p.y - cameraY;
+
+                ctx.globalAlpha = alpha;
+                ctx.fillStyle = p.color;
+
+                if (p.type === 'boost') {
+                    ctx.beginPath();
+                    const spikes = 5;
+                    const outerRadius = p.size;
+                    const innerRadius = p.size / 2;
+
+                    for (let i = 0; i < spikes * 2; i++) {
+                        const radius = i % 2 === 0 ? outerRadius : innerRadius;
+                        const angle = (Math.PI * i) / spikes;
+                        const x = p.x + Math.cos(angle) * radius;
+                        const y = screenY + Math.sin(angle) * radius;
+
+                        if (i === 0) ctx.moveTo(x, y);
+                        else ctx.lineTo(x, y);
+                    }
+                    ctx.closePath();
+                    ctx.fill();
+                } else {
+                    ctx.beginPath();
+                    ctx.arc(p.x, screenY, p.size * alpha, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                ctx.globalAlpha = 1.0;
+            });
+        }
+
+        function updateCactusPosition() {
+            if (!cactusElement) return;
+            cactusElement.style.display = 'block';
+
+            const screenX = cactus.x;
+            const screenY = cactus.y - cameraY;
+
+            cactusElement.style.left = (screenX - 80) + 'px';
+            cactusElement.style.top = (screenY - 100) + 'px';
+        }
+
+        function animateCactusJump(isSuper = false) {
+            if (!cactusElement) return;
+
+            const face = cactusElement.querySelector('.cactus-face');
+            const eyes = face.querySelectorAll('.eye');
+            const mouth = face.querySelector('.mouth');
+
+            cactusElement.classList.remove('cactus-jump', 'cactus-land');
+            void cactusElement.offsetWidth;
+            cactusElement.classList.add('cactus-jump');
+
+            eyes.forEach(eye => {
+                eye.classList.remove('jump', 'land');
+                eye.classList.add('jump');
+            });
+
+            mouth.classList.remove('jump', 'super');
+            mouth.classList.add(isSuper ? 'super' : 'jump');
+
+            const particleCount = isSuper ? 15 : 8;
+            createJumpParticles(
+                cactus.x + cactus.width / 2,
+                cactus.y + cactus.height,
+                particleCount,
+                isSuper ? 'boost' : 'normal'
+            );
+
+            if (isSuper) {
+                const gameContainer = document.getElementById('game-container');
+                gameContainer.classList.remove('screen-shake');
+                void gameContainer.offsetWidth;
+                gameContainer.classList.add('screen-shake');
+            }
+
+            setTimeout(() => {
+                if (!gameActive) return;
+                eyes.forEach(eye => {
+                    eye.classList.remove('jump');
+                });
+                mouth.classList.remove('jump', 'super');
+            }, 300);
+        }
+
+        function animateCactusLand() {
+            if (!cactusElement) return;
+
+            cactusElement.classList.remove('cactus-land');
+            void cactusElement.offsetWidth;
+            cactusElement.classList.add('cactus-land');
+
+            const face = cactusElement.querySelector('.cactus-face');
+            const eyes = face.querySelectorAll('.eye');
+
+            eyes.forEach(eye => {
+                eye.classList.add('land');
+            });
+
+            setTimeout(() => {
+                if (!gameActive) return;
+                eyes.forEach(eye => {
+                    eye.classList.remove('land');
+                });
+            }, 200);
+        }
+
+        function initGame() {
+            // Сбрасываем все игровые переменные
+            gameActive = true;
+            gamePaused = false;
+            score = 0;
+            maxHeight = 0;
+            currentWorld = 1;
+            cameraY = 0;
+            moveDirection = 0;
+            lastPlatformY = 0;
+            lastScoreHeight = 0;
+
+            // Сбрасываем комбо систему
+            combo = 0;
+            maxCombo = 0;
+            consecutiveJumps = 0;
+            speedMultiplier = 1.0;
+            lastJumpTime = 0;
+            jumpStreak = 0;
+            isInAir = false;
+            timeSinceLastPlatform = 0;
+
+            // Сбрасываем кактус
+            cactus.x = canvas.width / 2 - cactus.width / 2;
+            cactus.y = canvas.height - 250;
+            cactus.velocityY = 0;
+            cactus.jumpBoost = 1.0;
+            cactus.horizontalSpeed = 1.0;
+            cactus.isJumping = false;
+
+            // Очищаем игровые объекты
+            platforms = [];
+            boosts = [];
+            monsters = [];
+            particles = [];
+
+            if (!playerId) {
+                playerId = generateId();
+                localStorage.setItem('cactusJumpPlayerId', playerId);
+            }
+
+            gameSessionId = generateId();
+
+            // Удаляем старый кактус, если есть
+            if (cactusElement) {
+                cactusElement.remove();
+            }
+
+            // Создаем новый кактус
+            cactusElement = createCactusElement();
+            cactusElement.style.display = 'none';
+
+            // Создаем начальную платформу
+            platforms.push({
+                x: canvas.width / 2 - 40,
+                y: canvas.height - 50,
+                width: 80,
+                height: 15,
+                type: 'normal'
+            });
+
+            lastPlatformY = canvas.height - 50;
+
+            // Создаем остальные платформы
+            for (let i = 0; i < 20; i++) {
+                createPlatform();
+            }
+
+            updateDisplays();
+            pauseButton.classList.remove('active');
+
+            // Сбрасываем иконку паузы
+            const pauseIcon = pauseButton.querySelector('.pause-icon');
+            const playIcon = pauseButton.querySelector('.play-icon');
+            pauseIcon.style.display = 'block';
+            playIcon.style.display = 'none';
+            pauseIndicator.style.display = 'none';
+
+            // Показываем запрос на разрешение наклона через 0.5 секунды
+            setTimeout(() => {
+                if (gameActive && !tiltControlActive && !tiltPermissionRequested) {
+                    showTiltPermissionPanel();
+                }
+            }, 500);
+        }
+
+        function createPlatform() {
+            const world = worlds[currentWorld];
+            const platformTypes = ['normal', 'cracking'];
+            const type = platformTypes[Math.random() < world.crackingChance ? 1 : 0];
+
+            let platformX;
+            const minDistance = 20;
+            const maxDistance = canvas.width - world.platformWidth - 20;
+
+            const positionType = Math.floor(Math.random() * 3);
+            switch (positionType) {
+                case 0:
+                    platformX = minDistance + Math.random() * (canvas.width / 3 - world.platformWidth);
+                    break;
+                case 1:
+                    platformX = canvas.width / 3 + Math.random() * (canvas.width / 3 - world.platformWidth);
+                    break;
+                case 2:
+                    platformX = canvas.width * 2 / 3 + Math.random() * (canvas.width / 3 - world.platformWidth);
+                    break;
+            }
+
+            platformX = Math.max(minDistance, Math.min(maxDistance, platformX));
+
+            const baseGap = 60;
+            const comboReduction = Math.min(combo * 0.5, 20);
+            const platformGap = baseGap - comboReduction + Math.random() * 30;
+
+            const platform = {
+                x: platformX,
+                y: lastPlatformY - platformGap,
+                width: world.platformWidth,
+                height: 15,
+                type: type,
+                used: false
+            };
+            platforms.push(platform);
+            lastPlatformY = platform.y;
+
+            // Шанс создать буст на платформе
+            const boostChance = 0.15 + Math.min(combo * 0.02, 0.15);
+            if (Math.random() < boostChance) {
+                boosts.push({
+                    x: platform.x + platform.width / 2 - 15,
+                    y: platform.y - 25,
+                    width: 30,
+                    height: 30,
+                    active: true,
+                    type: Math.random() < 0.7 ? 'spring' : 'rocket'
+                });
+            }
+
+            // Шанс создать монстра
+            if (currentWorld >= 2 && Math.random() < world.monsterChance) {
+                monsters.push({
+                    x: Math.random() * (canvas.width - 40),
+                    y: platform.y - 30,
+                    width: 20,
+                    height: 20,
+                    speedX: (Math.random() - 0.5) * 2.5,
+                    speedY: (Math.random() - 0.5) * 1.5
+                });
+            }
+        }
+
+        function autoJump() {
+            const now = Date.now();
+            const timeSinceLastJump = now - lastJumpTime;
+
+            if (timeSinceLastJump < 500) {
+                consecutiveJumps++;
+                jumpStreak++;
+
+                if (jumpStreak > 3) {
+                    combo++;
+                    maxCombo = Math.max(maxCombo, combo);
+                    cactus.jumpBoost = 1.0 + (combo * 0.05);
+                    speedMultiplier = 1.0 + (combo * 0.03);
+
+                    if (combo > 1) {
+                        const comboBonus = combo * 10;
+                        score += comboBonus;
+                        createComboText(comboBonus);
+                    }
+                }
+            } else {
+                jumpStreak = 0;
+                if (consecutiveJumps > 2) {
+                    combo = 0;
+                    cactus.jumpBoost = 1.0;
+                    speedMultiplier = 1.0;
+                }
+                consecutiveJumps = 0;
+            }
+
+            lastJumpTime = now;
+
+            const baseJump = cactus.baseJumpPower * cactus.jumpBoost;
+            const airTimeBonus = Math.min(timeSinceLastPlatform * 0.001, 1.5);
+
+            cactus.velocityY = -(baseJump * (1 + airTimeBonus * 0.3));
+            cactus.isJumping = true;
+            isInAir = true;
+            timeSinceLastPlatform = 0;
+
+            animateCactusJump(false);
+        }
+
+        function createComboText(bonus) {
+            const text = document.createElement('div');
+            text.textContent = `+${bonus} COMBO!`;
+            text.style.position = 'absolute';
+            text.style.left = (cactus.x + cactus.width / 2 - 40) + 'px';
+            text.style.top = (cactus.y - cameraY - 30) + 'px';
+            text.style.color = '#FFD700';
+            text.style.fontWeight = 'bold';
+            text.style.fontSize = '16px';
+            text.style.textShadow = '0 2px 4px rgba(0,0,0,0.5)';
+            text.style.zIndex = '100';
+            text.style.animation = 'comboFloat 1s ease-out forwards';
+
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes comboFloat {
+                    0% { transform: translateY(0); opacity: 1; }
+                    100% { transform: translateY(-50px); opacity: 0; }
+                }
+            `;
+            document.head.appendChild(style);
+
+            document.getElementById('game-container').appendChild(text);
+            setTimeout(() => text.remove(), 1000);
+        }
+
+        function superJump() {
+            const maxJumpPower = cactus.baseJumpPower * 1.8;
+            cactus.velocityY = -(maxJumpPower * cactus.jumpBoost);
+            cactus.isJumping = true;
+            isInAir = true;
+
+            score += 100;
+
+            if (combo > 5) {
+                combo = Math.floor(combo * 0.7);
+            } else {
+                combo = 0;
+            }
+
+            cactus.jumpBoost = Math.max(1.0, cactus.jumpBoost * 0.8);
+
+            animateCactusJump(true);
+            updateDisplays();
+        }
+
+        function updateDisplays() {
+            if (combo > 1) {
+                scoreText.innerHTML = `${score} <span class="combo-indicator"><span>🔥x${combo}</span></span>`;
+            } else {
+                scoreText.innerHTML = `${score}`;
+            }
+
+            worldDisplay.textContent = worlds[currentWorld].name;
+        }
+
+        function addHeightScore() {
+            const currentHeight = Math.floor(-cameraY);
+
+            if (currentHeight > lastScoreHeight) {
+                const heightDifference = currentHeight - lastScoreHeight;
+                const pointsEarned = Math.floor(heightDifference * 0.3);
+                score += pointsEarned;
+                lastScoreHeight = currentHeight;
+            }
+        }
+
+        function checkCollisions() {
+            // Телепортация через края экрана
+            if (cactus.x < -cactus.width) {
+                cactus.x = canvas.width;
+            } else if (cactus.x > canvas.width) {
+                cactus.x = -cactus.width;
+            }
+
+            // Проверка столкновения с платформами
+            let landed = false;
+            for (let i = 0; i < platforms.length; i++) {
+                const platform = platforms[i];
+
+                const cactusLeft = cactus.x + cactus.hitboxOffsetX;
+                const cactusRight = cactusLeft + cactus.width;
+                const cactusTop = cactus.y + cactus.hitboxOffsetY;
+                const cactusBottom = cactusTop + cactus.height;
+
+                const platformTop = platform.y;
+                const platformLeft = platform.x;
+                const platformRight = platform.x + platform.width;
+
+                if (cactus.velocityY >= 0) {
+                    const horizontalOverlap = cactusRight > platformLeft + 10 &&
+                        cactusLeft < platformRight - 10;
+
+                    const verticalOverlap = cactusBottom >= platformTop - 2 &&
+                        cactusBottom <= platformTop + 10 &&
+                        cactusTop < platformTop;
+
+                    if (horizontalOverlap && verticalOverlap) {
+                        cactus.y = platformTop - cactus.height - cactus.hitboxOffsetY;
+                        cactus.velocityY = 0;
+                        cactus.isJumping = false;
+                        isInAir = false;
+                        landed = true;
+
+                        animateCactusLand();
+
+                        setTimeout(() => {
+                            if (gameActive && landed && !gamePaused) {
+                                autoJump();
+                            }
+                        }, 30);
+
+                        if (platform.type === 'cracking' && !platform.used) {
+                            platform.used = true;
+                            setTimeout(() => {
+                                const index = platforms.indexOf(platform);
+                                if (index > -1) {
+                                    platforms.splice(index, 1);
+                                    createPlatform();
+                                }
+                            }, 400);
+                        }
+
+                        checkWorldTransition();
+                        updateDisplays();
+
+                        break;
+                    }
+                }
+            }
+
+            // Проверка столкновения с бустами
+            for (let i = 0; i < boosts.length; i++) {
+                const boost = boosts[i];
+                if (boost.active &&
+                    cactus.x < boost.x + boost.width &&
+                    cactus.x + cactus.width > boost.x &&
+                    cactus.y < boost.y + boost.height &&
+                    cactus.y + cactus.height > boost.y) {
+                    superJump();
+                    boost.active = false;
+                    score += 50;
+                    updateDisplays();
+                }
+            }
+
+            // Проверка столкновения с монстрами
+            for (let i = 0; i < monsters.length; i++) {
+                const monster = monsters[i];
+
+                // Центр кактуса
+                const cactusCenterX = cactus.x + cactus.width / 2;
+                const cactusCenterY = cactus.y + cactus.height / 2;
+
+                // Центр монстра
+                const monsterCenterX = monster.x + monster.width / 2;
+                const monsterCenterY = monster.y + monster.height / 2;
+
+                // Радиусы (уменьши эти значения)
+                const cactusRadius = cactus.width / 15;  // Радиус кактуса
+                const monsterRadius = monster.width / 8; // Радиус монстра ← Меняй это!
+
+                // Расстояние между центрами
+                const dx = cactusCenterX - monsterCenterX;
+                const dy = cactusCenterY - monsterCenterY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                // Проверяем столкновение
+                if (distance < cactusRadius + monsterRadius) {
+                    gameOver();
+                    return;
+                }
+            }
+
+            // Проверка выхода за нижнюю границу
+            if (cactus.y > cameraY + canvas.height + 100) {
+                gameOver();
+            }
+        }
+
+        function checkWorldTransition() {
+            const newWorld = Math.floor(score / 800) + 1;
+            if (newWorld > currentWorld && newWorld <= 4) {
+                currentWorld = newWorld;
+                for (let i = 0; i < 5; i++) {
+                    createPlatform();
+                }
+            }
+        }
+
+        function updateMonsters() {
+            for (let i = monsters.length - 1; i >= 0; i--) {
+                const monster = monsters[i];
+
+                monster.x += monster.speedX;
+                monster.y += monster.speedY;
+
+                const screenTop = cameraY;
+                const screenBottom = cameraY + canvas.height;
+
+                if (monster.x <= 0) {
+                    monster.x = 0;
+                    monster.speedX = Math.abs(monster.speedX);
+                } else if (monster.x + monster.width >= canvas.width) {
+                    monster.x = canvas.width - monster.width;
+                    monster.speedX = -Math.abs(monster.speedX);
+                }
+
+                if (monster.y <= screenTop) {
+                    monster.y = screenTop;
+                    monster.speedY = Math.abs(monster.speedY);
+                } else if (monster.y + monster.height >= screenBottom) {
+                    monster.y = screenBottom - monster.height;
+                    monster.speedY = -Math.abs(monster.speedY);
+                }
+
+                if (Math.random() < 0.01) {
+                    monster.speedX += (Math.random() - 0.5) * 0.5;
+                    monster.speedY += (Math.random() - 0.5) * 0.5;
+
+                    const maxSpeed = 3;
+                    monster.speedX = Math.max(-maxSpeed, Math.min(maxSpeed, monster.speedX));
+                    monster.speedY = Math.max(-maxSpeed, Math.min(maxSpeed, monster.speedY));
+                }
+
+                if (monster.y > cameraY + canvas.height + 200) {
+                    monsters.splice(i, 1);
+                }
+            }
+        }
+
+        function drawSpringBoost(ctx, x, y, width, height) {
+            ctx.fillStyle = '#FFD700';
+            ctx.fillRect(x, y + height - 8, width, 8);
+
+            ctx.strokeStyle = '#FFA500';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            const time = Date.now() * 0.01;
+            for (let i = 0; i < 4; i++) {
+                const coilY = y + height - 15 - i * 5 + Math.sin(time + i) * 2;
+                ctx.moveTo(x + 5, coilY);
+                ctx.lineTo(x + width - 5, coilY);
+            }
+            ctx.stroke();
+
+            ctx.fillStyle = '#FF4500';
+            ctx.fillRect(x + width / 2 - 4, y + 2 + Math.sin(time) * 3, 8, 15);
+        }
+
+        function drawRocketBoost(ctx, x, y, width, height) {
+            const time = Date.now() * 0.01;
+
+            ctx.fillStyle = '#FF5722';
+            ctx.beginPath();
+            ctx.moveTo(x + width / 2, y);
+            ctx.lineTo(x + width, y + height / 2);
+            ctx.lineTo(x + width / 2, y + height);
+            ctx.lineTo(x, y + height / 2);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.fillStyle = `hsl(${40 + Math.sin(time * 2) * 10}, 100%, 60%)`;
+            ctx.beginPath();
+            ctx.moveTo(x + width / 2, y + height);
+            const flameSize = 8 + Math.sin(time * 5) * 3;
+            ctx.lineTo(x + width / 2 + flameSize, y + height + flameSize);
+            ctx.lineTo(x + width / 2 - flameSize, y + height + flameSize);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.fillStyle = '#2196F3';
+            ctx.beginPath();
+            ctx.arc(x + width / 2, y + height / 2, 6, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function draw() {
+            const world = worlds[currentWorld];
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Отрисовка фона
+            if (imagesLoaded && backgroundImages[world.bgImage]) {
+                const bgImage = backgroundImages[world.bgImage];
+                const aspectRatio = bgImage.width / bgImage.height;
+                let drawWidth = canvas.width;
+                let drawHeight = canvas.width / aspectRatio;
+
+                if (drawHeight < canvas.height) {
+                    drawHeight = canvas.height;
+                    drawWidth = canvas.height * aspectRatio;
+                }
+
+                const x = (canvas.width - drawWidth) / 2;
+                const y = (canvas.height - drawHeight) / 2;
+
+                ctx.drawImage(bgImage, x, y, drawWidth, drawHeight);
+            } else {
+                const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+                if (currentWorld === 1) {
+                    gradient.addColorStop(0, '#FFD700');
+                    gradient.addColorStop(1, '#FFA500');
+                } else if (currentWorld === 2) {
+                    gradient.addColorStop(0, '#228B22');
+                    gradient.addColorStop(1, '#006400');
+                } else if (currentWorld === 3) {
+                    gradient.addColorStop(0, '#87CEEB');
+                    gradient.addColorStop(1, '#4682B4');
+                } else {
+                    gradient.addColorStop(0, '#E6E6FA');
+                    gradient.addColorStop(1, '#D8BFD8');
+                }
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+
+            // Отрисовка частиц
+            drawParticles();
+
+            // Отрисовка платформ
+            platforms.forEach(platform => {
+                if (platform.type === 'normal') {
+                    ctx.fillStyle = world.platformColor;
+                } else {
+                    ctx.fillStyle = platform.used ? '#FF4500' : '#FF8C00';
+                }
+                ctx.fillRect(platform.x, platform.y - cameraY, platform.width, platform.height);
+
+                ctx.fillStyle = platform.type === 'normal' ? '#A0522D' : '#FF6347';
+                ctx.fillRect(platform.x, platform.y - cameraY, platform.width, 4);
+            });
+
+            // Отрисовка бустов
+            boosts.forEach(boost => {
+                if (boost.active) {
+                    const boostY = boost.y - cameraY;
+
+                    if (boost.type === 'spring') {
+                        drawSpringBoost(ctx, boost.x, boostY, boost.width, boost.height);
+                    } else if (boost.type === 'rocket') {
+                        drawRocketBoost(ctx, boost.x, boostY, boost.width, boost.height);
+                    }
+                }
+            });
+
+            // Отрисовка монстров
+            monsters.forEach(monster => {
+                const monsterY = monster.y - cameraY;
+                const monsterCenterX = monster.x + monster.width / 2;
+                const monsterCenterY = monsterY + monster.height / 2;
+                const time = Date.now() * 0.001;
+
+                ctx.save();
+                ctx.translate(monsterCenterX, monsterCenterY);
+
+                const floatOffset = Math.sin(time * 2 + monster.x * 0.1) * 2;
+                ctx.translate(0, floatOffset);
+
+                const bodyGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, 10);
+                bodyGradient.addColorStop(0, '#FF0000');
+                bodyGradient.addColorStop(0.6, '#8B0000');
+                bodyGradient.addColorStop(1, '#4B0000');
+
+                ctx.fillStyle = bodyGradient;
+                ctx.beginPath();
+                ctx.ellipse(0, 0, 10, 12, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.strokeStyle = '#FF4500';
+                ctx.lineWidth = 1.5;
+
+                const originalAlpha = ctx.globalAlpha;
+                ctx.globalAlpha = 0.7 + Math.sin(time * 3) * 0.3;
+                ctx.stroke();
+                ctx.globalAlpha = originalAlpha;
+
+                ctx.strokeStyle = '#FF6347';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                for (let i = 0; i < 3; i++) {
+                    const y = -8 + i * 6;
+                    ctx.moveTo(-7, y);
+                    ctx.lineTo(7, y);
+                }
+                ctx.stroke();
+
+                ctx.fillStyle = '#00FFFF';
+                ctx.beginPath();
+                ctx.arc(-4, -4, 2.5, 0, Math.PI * 2);
+                ctx.arc(4, -4, 2.5, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#000';
+                const lookAngle = Math.atan2(cactus.y - monster.y, cactus.x - monster.x);
+                const pupilOffsetX = Math.cos(lookAngle) * 1;
+                const pupilOffsetY = Math.sin(lookAngle) * 1;
+
+                ctx.beginPath();
+                ctx.arc(-4 + pupilOffsetX, -4 + pupilOffsetY, 1, 0, Math.PI * 2);
+                ctx.arc(4 + pupilOffsetX, -4 + pupilOffsetY, 1, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#000';
+                ctx.beginPath();
+                ctx.arc(0, 4, 4, 0.2, Math.PI - 0.2, false);
+                ctx.fill();
+
+                ctx.fillStyle = '#FFFFFF';
+                ctx.beginPath();
+                ctx.moveTo(-2, 3);
+                ctx.lineTo(-1, 6);
+                ctx.lineTo(0, 3);
+                ctx.moveTo(2, 3);
+                ctx.lineTo(1, 6);
+                ctx.lineTo(0, 3);
+                ctx.fill();
+
+                ctx.fillStyle = '#8B0000';
+                ctx.beginPath();
+                ctx.moveTo(-6, -10);
+                ctx.lineTo(-8, -14);
+                ctx.lineTo(-4, -12);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.beginPath();
+                ctx.moveTo(6, -10);
+                ctx.lineTo(8, -14);
+                ctx.lineTo(4, -12);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.beginPath();
+                ctx.arc(0, 0, 13, 0, Math.PI * 2);
+                const glowGradient = ctx.createRadialGradient(0, 0, 8, 0, 0, 13);
+                glowGradient.addColorStop(0, 'rgba(255, 0, 0, 0.2)');
+                glowGradient.addColorStop(1, 'rgba(255, 0, 0, 0)');
+                ctx.fillStyle = glowGradient;
+                ctx.fill();
+
+                ctx.restore();
+            });
+        }
+
+        function update() {
+            if (!gameActive || gamePaused) return;
+
+            const world = worlds[currentWorld];
+
+            // Применяем гравитацию мира
+            cactus.velocityY += world.gravity;
+            cactus.y += cactus.velocityY;
+
+            if (isInAir) {
+                timeSinceLastPlatform += 16;
+            }
+
+            // Применяем горизонтальное движение с учетом скорости и комбо
+            cactus.x += moveDirection * world.moveSpeed * speedMultiplier;
+
+            // Обновление камеры (кактус остается на 40% высоты экрана)
+            const targetCameraY = cactus.y - canvas.height * 0.4;
+            const cameraSpeed = 0.4;
+            cameraY += (targetCameraY - cameraY) * cameraSpeed;
+            if (cameraY > 0) cameraY = 0;
+
+            // Обновляем максимальную высоту
+            const currentHeight = Math.max(0, Math.floor((-cameraY) / 10));
+            if (currentHeight > maxHeight) {
+                maxHeight = currentHeight;
+            }
+
+            // Начисляем очки за высоту
+            addHeightScore();
+
+            // Удаляем платформы, которые ушли слишком далеко вниз
+            for (let i = platforms.length - 1; i >= 0; i--) {
+                if (platforms[i].y > cameraY + canvas.height + 50) {
+                    platforms.splice(i, 1);
+                    createPlatform();
+                }
+            }
+
+            // Удаляем бусты, которые ушли слишком далеко вниз
+            for (let i = boosts.length - 1; i >= 0; i--) {
+                if (boosts[i].y > cameraY + canvas.height + 50) {
+                    boosts.splice(i, 1);
+                }
+            }
+
+            // Обновляем монстров
+            updateMonsters();
+
+            // Обновляем частицы
+            updateParticles();
+
+            // Проверяем столкновения
+            checkCollisions();
+
+            // Обновляем позицию DOM-кактуса
+            updateCactusPosition();
+
+            // Отрисовываем игру
+            draw();
+
+            // Обновляем дисплей
+            updateDisplays();
+
+            // Продолжаем игровой цикл
+            requestAnimationFrame(update);
+        }
+
+        function gameOver() {
+            gameActive = false;
+
+            // Скрываем кактус
+            if (cactusElement) {
+                cactusElement.style.display = 'none';
+            }
+
+            // Показываем результаты
+            finalScore.textContent = `🏆 Очки: ${score}`;
+            heightRecord.textContent = `📏 Высота: ${maxHeight}m`;
+            comboRecord.textContent = `⚡ Макс. комбо: ${maxCombo}`;
+            gameOverScreen.style.display = 'flex';
+
+            // Проверяем, нужно ли показывать попап для нового рекорда
+            if (shouldShowRecordPopup(score)) {
+                setTimeout(() => {
+                    showNamePopup();
+                }, 500);
+            }
+        }
+
+        function togglePause() {
+            if (!gameActive) return;
+
+            gamePaused = !gamePaused;
+            const pauseIcon = pauseButton.querySelector('.pause-icon');
+            const playIcon = pauseButton.querySelector('.play-icon');
+
+            if (gamePaused) {
+                pauseButton.classList.add('active');
+                pauseIcon.style.display = 'none';
+                playIcon.style.display = 'block';
+                pauseIndicator.style.display = 'block';
+            } else {
+                pauseButton.classList.remove('active');
+                pauseIcon.style.display = 'block';
+                playIcon.style.display = 'none';
+                pauseIndicator.style.display = 'none';
+                update();
+            }
+        }
+
+        function showNamePopup() {
+            namePopup.style.display = 'flex';
+            playerNameInput.value = playerName;
+            playerNameInput.focus();
+        }
+
+        // ========== ИНИЦИАЛИЗАЦИЯ И ОБРАБОТЧИКИ ==========
+
+        function resizeCanvas() {
+            const container = document.getElementById('game-container');
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+
+            if (gameActive) {
+                updateCactusPosition();
+            }
+        }
+
+        // Инициализация при загрузке
+        window.addEventListener('load', function () {
+            loadBackgroundImages();
+
+            const savedPlayerId = localStorage.getItem('cactusJumpPlayerId');
+            if (savedPlayerId) {
+                playerId = savedPlayerId;
+            }
+
+            const savedName = localStorage.getItem('cactusJumpPlayerName');
+            if (savedName) {
+                playerName = savedName;
+            }
+
+            loadRecords();
+            resizeCanvas();
+
+            if (!isMobileDevice()) {
+                document.getElementById('desktop-message').style.display = 'flex';
+                document.getElementById('game-container').style.display = 'none';
+            } else {
+                checkOrientation();
+                window.addEventListener('resize', checkOrientation);
+                window.addEventListener('orientationchange', checkOrientation);
+            }
+        });
+
+        window.addEventListener('resize', resizeCanvas);
+
+        // Обработчики событий
+        startButton.addEventListener('click', () => {
+            startScreen.style.display = 'none';
+            initGame();
+
+            // Показываем кактус с небольшой задержкой
+            setTimeout(() => {
+                if (cactusElement) {
+                    cactusElement.style.display = 'block';
+                }
+            }, 50);
+
+            update();
+        });
+
+        restartButton.addEventListener('click', () => {
+            gameOverScreen.style.display = 'none';
+            namePopup.style.display = 'none';
+            startScreen.style.display = 'none';
+            initGame();
+
+            // Показываем кактус с небольшой задержкой
+            setTimeout(() => {
+                if (cactusElement) {
+                    cactusElement.style.display = 'block';
+                }
+            }, 50);
+
+            update();
+        });
+
+        pauseButton.addEventListener('click', togglePause);
+
+        // Клик по индикатору паузы тоже снимает паузу
+        pauseIndicator.addEventListener('click', togglePause);
+
+        scoreDisplayMain.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (gameActive && !gamePaused) {
+                togglePause();
+            }
+            showRecords();
+        });
+
+        backFromRecords.addEventListener('click', () => {
+            recordsScreen.style.display = 'none';
+        });
+
+        saveNameBtn.addEventListener('click', () => {
+            const name = playerNameInput.value.trim();
+
+            if (name.length < 2) {
+                nameError.textContent = 'Имя должно быть не короче 2 символов';
+                return;
+            }
+
+            if (name.length > 15) {
+                nameError.textContent = 'Имя должно быть не длиннее 15 символов';
+                return;
+            }
+
+            const invalidChars = /[<>\/\\|?*:"']/;
+            if (invalidChars.test(name)) {
+                nameError.textContent = 'Имя содержит недопустимые символы';
+                return;
+            }
+
+            playerName = name;
+            localStorage.setItem('cactusJumpPlayerName', name);
+
+            addRecord(name, score, maxHeight, maxCombo);
+            namePopup.style.display = 'none';
+            showRecords();
+        });
+
+        playerNameInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                saveNameBtn.click();
+            }
+        });
+
+        canvas.addEventListener('click', (e) => {
+            if (!gameActive || gamePaused) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const screenWidth = canvas.width;
+
+            if (clickX < screenWidth / 2) {
+                moveDirection = -1;
+            } else {
+                moveDirection = 1;
+            }
+        });
+
+        leftControl.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            moveDirection = -1;
+            tiltControlEnabled = false;
+        });
+
+        rightControl.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            moveDirection = 1;
+            tiltControlEnabled = false;
+        });
+
+        leftControl.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            if (moveDirection === -1) moveDirection = 0;
+        });
+
+        rightControl.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            if (moveDirection === 1) moveDirection = 0;
+        });
+
+        canvas.addEventListener('touchend', () => {
+            moveDirection = 0;
+        });
+
+        canvas.addEventListener('touchcancel', () => {
+            moveDirection = 0;
+        });
+
+        canvas.addEventListener('touchstart', () => {
+            tiltControlEnabled = true;
+        });
+
+        document.addEventListener('touchstart', (e) => {
+            if (e.target === canvas || e.target === leftControl || e.target === rightControl) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        document.addEventListener('touchmove', (e) => {
+            if (e.target === canvas || e.target === leftControl || e.target === rightControl) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        document.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+        });
+
+        window.addEventListener('blur', () => {
+            if (gameActive && !gamePaused) {
+                togglePause();
+            }
+        });
+
+        // Обработчики для управления наклоном
+        enableTiltBtn.addEventListener('click', function () {
+            console.log('Кнопка "Разрешить наклон" нажата');
+            enableTiltControl();
+        });
+
+        skipTiltBtn.addEventListener('click', function () {
+            console.log('Кнопка "Пропустить наклон" нажата');
+            skipTiltControl();
+        });
+    </script>
+</body>
+
+</html>
